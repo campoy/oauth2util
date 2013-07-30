@@ -60,6 +60,9 @@ func HandleFunc(path string, h http.HandlerFunc, cfg *oauth.Config) error {
 // Client creates an authenticated http.Client given an http.Request
 // containing an oauth code.
 func Client(r *http.Request, transport http.RoundTripper, cfg *oauth.Config) (*http.Client, error) {
+	if errp := r.FormValue("error"); len(errp) > 0 {
+		return nil, fmt.Errorf("error in oauth2 response: %q", errp)
+	}
 	t := &oauth.Transport{
 		Config:    cfg,
 		Transport: transport,
@@ -71,6 +74,8 @@ func Client(r *http.Request, transport http.RoundTripper, cfg *oauth.Config) (*h
 	return t.Client(), nil
 }
 
+// callback handles the response from the authentication server and redirects
+// it to the corresponding handler.
 func callback(w http.ResponseWriter, r *http.Request) {
 	mutex.RLock()
 	defer mutex.RUnlock()
